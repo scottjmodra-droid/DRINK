@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DRINK</title>
+<meta name="theme-color" content="#1a0509">
+<meta name="description" content="A simple, private, offline drink-day tracker.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg-1:#050002;
+    --bg-2:#1a0509;
+    --bg-3:#2b0812;
+    --burgundy:#7a1030;
+    --burgundy-bright:#a8264f;
+    --burgundy-dim:#4a0d1f;
+    --text:#f2e6e9;
+    --text-dim:#b79aa2;
+    --none:#3f8f7a;
+    --none-dim:#1f3c34;
+    --light:#c99a3c;
+    --light-dim:#4a3a19;
+    --full:#c9314f;
+    --full-dim:#4a141f;
+    --unset:#3a2a2f;
+    --card-border:rgba(255,255,255,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse at top, var(--bg-3) 0%, transparent 60%),
+      linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 55%, #000000 100%);
+    background-attachment:fixed;
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding-bottom:40px;
+  }
+  .app{
+    max-width:480px;
+    margin:0 auto;
+    padding:24px 18px 12px;
+  }
+  header{
+    text-align:center;
+    margin-bottom:22px;
+  }
+  header h1{
+    font-size:2.1rem;
+    letter-spacing:0.35em;
+    margin:0;
+    font-weight:800;
+    background:linear-gradient(180deg,#f2e6e9,var(--burgundy-bright));
+    -webkit-background-clip:text;
+    background-clip:text;
+    -webkit-text-fill-color:transparent;
+  }
+  header p{
+    color:var(--text-dim);
+    font-size:0.85rem;
+    margin:6px 0 0;
+  }
+  section.card{
+    background:linear-gradient(155deg, rgba(255,255,255,0.03), rgba(0,0,0,0.15));
+    border:1px solid var(--card-border);
+    border-radius:16px;
+    padding:18px;
+    margin-bottom:16px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.35);
+  }
+  .card h2{
+    margin:0 0 14px;
+    font-size:0.75rem;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:var(--text-dim);
+    font-weight:700;
+  }
+  .today-date{
+    text-align:center;
+    font-size:0.95rem;
+    color:var(--text-dim);
+    margin-bottom:14px;
+  }
+  .choice-row{
+    display:flex;
+    gap:10px;
+  }
+  .choice-btn{
+    flex:1;
+    padding:16px 6px;
+    border-radius:12px;
+    border:1.5px solid var(--card-border);
+    background:rgba(255,255,255,0.02);
+    color:var(--text);
+    font-size:0.95rem;
+    font-weight:700;
+    cursor:pointer;
+    transition:all 0.15s ease;
+    text-align:center;
+  }
+  .choice-btn small{
+    display:block;
+    font-weight:400;
+    font-size:0.7rem;
+    color:var(--text-dim);
+    margin-top:4px;
+  }
+  .choice-btn:active{ transform:scale(0.96); }
+  .choice-btn.none.active{ background:var(--none-dim); border-color:var(--none); color:#cdf5e9; }
+  .choice-btn.light.active{ background:var(--light-dim); border-color:var(--light); color:#ffe9bd; }
+  .choice-btn.full.active{ background:var(--full-dim); border-color:var(--full); color:#ffd0da; }
+  .clear-link{
+    display:block;
+    text-align:center;
+    margin-top:10px;
+    font-size:0.78rem;
+    color:var(--text-dim);
+    text-decoration:underline;
+    cursor:pointer;
+  }
+
+  .week-range{
+    text-align:center;
+    color:var(--text-dim);
+    font-size:0.78rem;
+    margin-top:-8px;
+    margin-bottom:14px;
+  }
+  .tally{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .tally-item{
+    flex:1;
+    text-align:center;
+  }
+  .tally-item .num{
+    font-size:1.4rem;
+    font-weight:800;
+  }
+  .tally-item.none .num{ color:var(--none); }
+  .tally-item.light .num{ color:var(--light); }
+  .tally-item.full .num{ color:var(--full); }
+  .tally-item .lbl{
+    font-size:0.68rem;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+  }
+  .tally-item .goal{
+    font-size:0.68rem;
+    color:var(--text-dim);
+    margin-top:2px;
+  }
+  .bar-track{
+    height:8px;
+    border-radius:6px;
+    background:rgba(255,255,255,0.05);
+    overflow:hidden;
+    margin-top:6px;
+  }
+  .bar-fill{ height:100%; border-radius:6px; transition:width 0.3s ease; }
+  .bar-fill.none{ background:var(--none); }
+  .bar-fill.light{ background:var(--light); }
+  .bar-fill.full{ background:var(--full); }
+  .week-note{
+    font-size:0.78rem;
+    color:var(--text-dim);
+    text-align:center;
+    margin-top:12px;
+  }
+
+  .cal-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:12px;
+  }
+  .cal-header button{
+    background:none;
+    border:1px solid var(--card-border);
+    color:var(--text);
+    border-radius:8px;
+    padding:6px 12px;
+    cursor:pointer;
+    font-size:1rem;
+  }
+  .cal-header .month-label{
+    font-weight:700;
+    font-size:0.95rem;
+  }
+  .cal-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr) 34px;
+    gap:5px;
+  }
+  .cal-dow{
+    text-align:center;
+    font-size:0.65rem;
+    color:var(--text-dim);
+    padding-bottom:4px;
+  }
+  .cal-dow.goal-col{ font-size:0.55rem; }
+  .cal-day{
+    aspect-ratio:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:8px;
+    font-size:0.78rem;
+    background:rgba(255,255,255,0.03);
+    color:var(--text-dim);
+    cursor:pointer;
+    border:1px solid transparent;
+    position:relative;
+  }
+  .cal-day.empty{ visibility:hidden; cursor:default; }
+  .cal-day.future{ opacity:0.3; cursor:default; }
+  .cal-day.none{ background:var(--none-dim); color:#cdf5e9; border-color:var(--none); }
+  .cal-day.light{ background:var(--light-dim); color:#ffe9bd; border-color:var(--light); }
+  .cal-day.full{ background:var(--full-dim); color:#ffd0da; border-color:var(--full); }
+  .cal-day.today-marker::after{
+    content:"";
+    position:absolute;
+    bottom:3px;
+    left:50%;
+    transform:translateX(-50%);
+    width:4px;height:4px;
+    border-radius:50%;
+    background:var(--burgundy-bright);
+  }
+
+  .week-marks{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+  }
+  .week-marks.pending{ opacity:0.5; }
+  .week-marks .mark{
+    font-size:0.62rem;
+    font-weight:800;
+    color:var(--text-dim);
+    line-height:1;
+  }
+  .week-marks .mark.pass{ color:var(--none); }
+  .week-marks .mark.fail{ color:var(--full); }
+
+  .legend{
+    display:flex;
+    gap:14px;
+    justify-content:center;
+    margin-top:12px;
+    flex-wrap:wrap;
+  }
+  .legend span{
+    font-size:0.68rem;
+    color:var(--text-dim);
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+  .legend i{
+    width:9px;height:9px;border-radius:3px;display:inline-block;
+  }
+  .legend i.none{ background:var(--none); }
+  .legend i.light{ background:var(--light); }
+  .legend i.full{ background:var(--full); }
+
+  .backup-row{
+    display:flex;
+    gap:10px;
+  }
+  .backup-row button{
+    flex:1;
+    padding:12px;
+    border-radius:10px;
+    border:1px solid var(--card-border);
+    background:rgba(255,255,255,0.02);
+    color:var(--text-dim);
+    font-size:0.82rem;
+    cursor:pointer;
+  }
+  .backup-row button:active{ transform:scale(0.97); }
+  .privacy-note{
+    text-align:center;
+    font-size:0.7rem;
+    color:var(--text-dim);
+    opacity:0.7;
+    margin-top:4px;
+  }
+
+  /* Modal */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.6);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:50;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal{
+    background:linear-gradient(160deg, #1c0611, #0a0004);
+    border:1px solid var(--card-border);
+    border-radius:16px;
+    padding:20px;
+    width:100%;
+    max-width:340px;
+    box-shadow:0 10px 40px rgba(0,0,0,0.6);
+  }
+  .modal h3{ margin:0 0 4px; font-size:1rem; }
+  .modal p{ margin:0 0 16px; color:var(--text-dim); font-size:0.8rem; }
+  .modal .choice-row{ margin-bottom:10px; }
+  .modal-actions{
+    display:flex;
+    gap:10px;
+    margin-top:4px;
+  }
+  .modal-actions button{
+    flex:1;
+    padding:10px;
+    border-radius:10px;
+    border:1px solid var(--card-border);
+    background:rgba(255,255,255,0.03);
+    color:var(--text-dim);
+    cursor:pointer;
+    font-size:0.85rem;
+  }
+
+  input[type=file]{ display:none; }
+
+  .toast{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:#1c0611;
+    border:1px solid var(--burgundy);
+    color:var(--text);
+    padding:10px 18px;
+    border-radius:10px;
+    font-size:0.82rem;
+    opacity:0;
+    pointer-events:none;
+    transition:all 0.25s ease;
+    z-index:100;
+  }
+  .toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>DRINK</h1>
+      <p>a quiet log, kept only on this device</p>
+    </header>
+
+    <section class="card">
+      <h2>Today</h2>
+      <div class="today-date" id="todayDate"></div>
+      <div class="choice-row">
+        <button class="choice-btn none" data-choice="none">None<small>0 drinks</small></button>
+        <button class="choice-btn light" data-choice="light">Light<small>1–2</small></button>
+        <button class="choice-btn full" data-choice="full">Full<small>3+</small></button>
+      </div>
+      <div class="clear-link" id="clearToday">clear today's entry</div>
+    </section>
+
+    <section class="card">
+      <h2>This Week</h2>
+      <div class="week-range" id="weekRange"></div>
+      <div class="tally">
+        <div class="tally-item none">
+          <div class="num" id="tallyNone">0</div>
+          <div class="lbl">None</div>
+          <div class="goal">goal ≥2</div>
+          <div class="bar-track"><div class="bar-fill none" id="barNone" style="width:0%"></div></div>
+        </div>
+        <div class="tally-item light">
+          <div class="num" id="tallyLight">0</div>
+          <div class="lbl">Light</div>
+          <div class="goal">&nbsp;</div>
+          <div class="bar-track"><div class="bar-fill light" id="barLight" style="width:0%"></div></div>
+        </div>
+        <div class="tally-item full">
+          <div class="num" id="tallyFull">0</div>
+          <div class="lbl">Full</div>
+          <div class="goal">goal ≤2</div>
+          <div class="bar-track"><div class="bar-fill full" id="barFull" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="week-note" id="weekNote"></div>
+    </section>
+
+    <section class="card">
+      <h2>Calendar</h2>
+      <div class="cal-header">
+        <button id="prevMonth">‹</button>
+        <div class="month-label" id="monthLabel"></div>
+        <button id="nextMonth">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="legend">
+        <span><i class="none"></i>None</span>
+        <span><i class="light"></i>Light</span>
+        <span><i class="full"></i>Full</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Backup</h2>
+      <div class="backup-row">
+        <button id="exportBtn">Export data</button>
+        <button id="importBtn">Import data</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json">
+      <div class="privacy-note">Everything stays in this browser's local storage. Nothing is sent anywhere. Export regularly if you want a backup.</div>
+    </section>
+  </div>
+
+  <div class="modal-overlay" id="dayModal">
+    <div class="modal">
+      <h3 id="modalDate"></h3>
+      <p>Set this day's entry.</p>
+      <div class="choice-row">
+        <button class="choice-btn none" data-mchoice="none">None<small>0 drinks</small></button>
+        <button class="choice-btn light" data-mchoice="light">Light<small>1–2</small></button>
+        <button class="choice-btn full" data-mchoice="full">Full<small>3+</small></button>
+      </div>
+      <div class="modal-actions">
+        <button id="modalClear">Clear entry</button>
+        <button id="modalClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'drink-tracker-data-v1';
+  const CHOICES = ['none','light','full'];
+
+  function loadData(){
+    try{
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    }catch(e){ return {}; }
+  }
+  function saveData(data){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+  let data = loadData();
+
+  function pad(n){ return n < 10 ? '0'+n : ''+n; }
+  function keyFor(d){
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+  }
+  function startOfDay(d){
+    const nd = new Date(d);
+    nd.setHours(0,0,0,0);
+    return nd;
+  }
+  const today = startOfDay(new Date());
+  const todayKey = keyFor(today);
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 1800);
+  }
+
+  // ---------- Today card ----------
+  const dateFmt = new Intl.DateTimeFormat(undefined, { weekday:'long', month:'long', day:'numeric' });
+  document.getElementById('todayDate').textContent = dateFmt.format(today);
+
+  function renderTodayCard(){
+    document.querySelectorAll('.choice-row .choice-btn[data-choice]').forEach(btn=>{
+      btn.classList.toggle('active', data[todayKey] === btn.dataset.choice);
+    });
+  }
+  document.querySelectorAll('.choice-row .choice-btn[data-choice]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      data[todayKey] = btn.dataset.choice;
+      saveData(data);
+      renderAll();
+      showToast('Saved: ' + btn.dataset.choice);
+    });
+  });
+  document.getElementById('clearToday').addEventListener('click', ()=>{
+    delete data[todayKey];
+    saveData(data);
+    renderAll();
+    showToast('Cleared today');
+  });
+
+  // ---------- Week summary (Mon–Sun) ----------
+  function mondayOf(d){
+    const nd = startOfDay(d);
+    const day = nd.getDay(); // 0 Sun .. 6 Sat
+    const diff = (day === 0) ? -6 : 1 - day;
+    nd.setDate(nd.getDate() + diff);
+    return nd;
+  }
+  const weekFmt = new Intl.DateTimeFormat(undefined, { month:'short', day:'numeric' });
+
+  function renderWeek(){
+    const monday = mondayOf(today);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate()+6);
+    document.getElementById('weekRange').textContent =
+      weekFmt.format(monday) + ' – ' + weekFmt.format(sunday);
+
+    let counts = { none:0, light:0, full:0 };
+    for(let i=0;i<7;i++){
+      const d = new Date(monday);
+      d.setDate(monday.getDate()+i);
+      const k = keyFor(d);
+      const v = data[k];
+      if(v && counts.hasOwnProperty(v)) counts[v]++;
+    }
+
+    document.getElementById('tallyNone').textContent = counts.none;
+    document.getElementById('tallyLight').textContent = counts.light;
+    document.getElementById('tallyFull').textContent = counts.full;
+
+    document.getElementById('barNone').style.width = Math.min(100, counts.none/2*100) + '%';
+    document.getElementById('barLight').style.width = Math.min(100, counts.light/3*100) + '%';
+    document.getElementById('barFull').style.width = Math.min(100, counts.full/2*100) + '%';
+
+    const loggedDays = counts.none + counts.light + counts.full;
+    let note = '';
+    if(loggedDays === 0){
+      note = 'No days logged yet this week.';
+    } else if(counts.full > 2){
+      note = 'Full days over target (' + counts.full + '/2) — a lighter day soon would help.';
+    } else if(loggedDays < 7){
+      note = (7-loggedDays) + ' day' + ((7-loggedDays)===1?'':'s') + ' left to log this week.';
+    } else {
+      note = 'Week fully logged.';
+    }
+    document.getElementById('weekNote').textContent = note;
+  }
+
+  // ---------- Calendar ----------
+  let viewYear = today.getFullYear();
+  let viewMonth = today.getMonth(); // 0-indexed
+
+  const monthFmt = new Intl.DateTimeFormat(undefined, { month:'long', year:'numeric' });
+  const DOW = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+
+  function renderCalendar(){
+    const label = monthFmt.format(new Date(viewYear, viewMonth, 1));
+    document.getElementById('monthLabel').textContent = label;
+
+    const grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+
+    DOW.forEach(d=>{
+      const el = document.createElement('div');
+      el.className = 'cal-dow';
+      el.textContent = d;
+      grid.appendChild(el);
+    });
+    const goalHeader = document.createElement('div');
+    goalHeader.className = 'cal-dow goal-col';
+    goalHeader.textContent = '🎯';
+    grid.appendChild(goalHeader);
+
+    const firstOfMonth = new Date(viewYear, viewMonth, 1);
+    let firstDow = firstOfMonth.getDay(); // 0 Sun..6 Sat
+    firstDow = (firstDow === 0) ? 6 : firstDow - 1; // convert to Mon=0..Sun=6
+    const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+    const totalCells = firstDow + daysInMonth;
+    const totalRows = Math.ceil(totalCells/7);
+
+    for(let row=0; row<totalRows; row++){
+      for(let col=0; col<7; col++){
+        const cellIndex = row*7 + col;
+        const dayNum = cellIndex - firstDow + 1;
+        const el = document.createElement('div');
+
+        if(dayNum < 1 || dayNum > daysInMonth){
+          el.className = 'cal-day empty';
+        } else {
+          const d = new Date(viewYear, viewMonth, dayNum);
+          const k = keyFor(d);
+          el.className = 'cal-day';
+          el.textContent = dayNum;
+
+          if(d > today){
+            el.classList.add('future');
+          } else {
+            const v = data[k];
+            if(v) el.classList.add(v);
+            el.addEventListener('click', ()=> openModal(k, d));
+          }
+          if(k === todayKey){
+            el.classList.add('today-marker');
+          }
+        }
+        grid.appendChild(el);
+      }
+
+      // Goal marks for this calendar row's Mon–Sun week, shown in a slim
+      // column to the right of each week (dates may span into the
+      // adjacent month; totals are computed from real dates).
+      const rowMonday = new Date(viewYear, viewMonth, 1 - firstDow + row*7);
+      const rowSunday = new Date(rowMonday);
+      rowSunday.setDate(rowMonday.getDate()+6);
+
+      const marksEl = document.createElement('div');
+      marksEl.className = 'week-marks';
+
+      if(rowMonday <= today){
+        let wc = { none:0, light:0, full:0 };
+        for(let i=0;i<7;i++){
+          const dd = new Date(rowMonday);
+          dd.setDate(rowMonday.getDate()+i);
+          const vv = data[keyFor(dd)];
+          if(vv && wc.hasOwnProperty(vv)) wc[vv]++;
+        }
+        const noneMet = wc.none >= 2;
+        const fullMet = wc.full <= 2;
+        const pending = rowSunday > today;
+
+        if(pending) marksEl.classList.add('pending');
+        marksEl.innerHTML =
+          '<span class="mark ' + (noneMet?'pass':'fail') + '" title="' + wc.none + ' None day(s), goal ≥ 2">' + (noneMet?'✓':'✕') + 'N</span>' +
+          '<span class="mark ' + (fullMet?'pass':'fail') + '" title="' + wc.full + ' Full day(s), goal ≤ 2">' + (fullMet?'✓':'✕') + 'F</span>';
+      }
+      grid.appendChild(marksEl);
+    }
+  }
+
+  document.getElementById('prevMonth').addEventListener('click', ()=>{
+    viewMonth--;
+    if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+    renderCalendar();
+  });
+  document.getElementById('nextMonth').addEventListener('click', ()=>{
+    const next = new Date(viewYear, viewMonth+1, 1);
+    if(next > today){ return; } // don't navigate into the future
+    viewMonth++;
+    if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+    renderCalendar();
+  });
+
+  // ---------- Day edit modal ----------
+  let modalKey = null;
+  const modalOverlay = document.getElementById('dayModal');
+  const modalDateFmt = new Intl.DateTimeFormat(undefined, { weekday:'short', month:'long', day:'numeric', year:'numeric' });
+
+  function openModal(key, dateObj){
+    modalKey = key;
+    document.getElementById('modalDate').textContent = modalDateFmt.format(dateObj);
+    modalOverlay.querySelectorAll('[data-mchoice]').forEach(btn=>{
+      btn.classList.toggle('active', data[key] === btn.dataset.mchoice);
+    });
+    modalOverlay.classList.add('open');
+  }
+  function closeModal(){
+    modalOverlay.classList.remove('open');
+    modalKey = null;
+  }
+  modalOverlay.querySelectorAll('[data-mchoice]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(!modalKey) return;
+      data[modalKey] = btn.dataset.mchoice;
+      saveData(data);
+      renderAll();
+      closeModal();
+      showToast('Saved');
+    });
+  });
+  document.getElementById('modalClear').addEventListener('click', ()=>{
+    if(modalKey){
+      delete data[modalKey];
+      saveData(data);
+      renderAll();
+    }
+    closeModal();
+  });
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', (e)=>{
+    if(e.target === modalOverlay) closeModal();
+  });
+
+  // ---------- Backup ----------
+  document.getElementById('exportBtn').addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'drink-data-' + todayKey + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  const importFile = document.getElementById('importFile');
+  document.getElementById('importBtn').addEventListener('click', ()=> importFile.click());
+  importFile.addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const imported = JSON.parse(reader.result);
+        if(typeof imported !== 'object' || imported === null) throw new Error('bad format');
+        const merge = confirm('Merge with existing data? OK = merge, Cancel = replace all data.');
+        if(merge){
+          data = Object.assign({}, data, imported);
+        } else {
+          data = imported;
+        }
+        saveData(data);
+        renderAll();
+        showToast('Import complete');
+      }catch(err){
+        alert('Could not read that file as valid DRINK data.');
+      }
+      importFile.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  // ---------- Render all ----------
+  function renderAll(){
+    renderTodayCard();
+    renderWeek();
+    renderCalendar();
+  }
+  renderAll();
+
+  // ---------- Service worker (offline) ----------
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    });
+  }
+})();
+</script>
+</body>
+</html>
