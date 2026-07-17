@@ -1,4 +1,4 @@
-const CACHE = 'drink-cache-v1';
+const CACHE = 'drink-cache-v2';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -15,8 +15,17 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Network-first: always try to fetch the latest version when online, and
+// only fall back to the cached copy when offline. This means updates show
+// up on next load instead of being stuck behind an old cached version.
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    fetch(event.request)
+      .then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
