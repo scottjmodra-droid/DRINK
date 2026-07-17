@@ -35,8 +35,9 @@
   html{
     height:100%;
     background:
-      radial-gradient(ellipse at top, var(--bg-3) 0%, transparent 60%),
-      linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 55%, #000000 100%);
+      radial-gradient(ellipse 600px 240px at top, var(--bg-3) 0%, transparent 100%),
+      linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 40%, #000000 75%);
+    background-attachment:fixed;
     background-color:#000000;
     overscroll-behavior-y:none;
   }
@@ -92,6 +93,15 @@
     line-height:1;
   }
   .settings-btn:active{ transform:scale(0.94); }
+  .version-tag{
+    position:absolute;
+    top:2px;
+    left:0;
+    font-size:0.6rem;
+    color:var(--text-dim);
+    opacity:0.55;
+    letter-spacing:0.03em;
+  }
   section.card{
     background:linear-gradient(155deg, rgba(255,255,255,0.03), rgba(0,0,0,0.15));
     border:1px solid var(--card-border);
@@ -514,6 +524,7 @@
 <body>
   <div class="app">
     <header>
+      <span class="version-tag" id="versionTag">v1.0</span>
       <button class="settings-btn" id="settingsBtn" aria-label="Settings">⚙</button>
       <h1>DRINK</h1>
       <p>a quiet log, kept only on this device</p>
@@ -682,7 +693,7 @@
   const SETTINGS_KEY = 'drink-tracker-settings-v1';
   const DEFAULT_SETTINGS = {
     zeroGoal:2, lightGoalMin:2, lightGoalMax:4, fullGoal:2,
-    zeroGoalEnabled:true, lightGoalEnabled:true, fullGoalEnabled:true,
+    zeroGoalEnabled:true, lightGoalEnabled:false, fullGoalEnabled:true,
     lightMax:2, fullMin:3
   };
   function loadSettings(){
