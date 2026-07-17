@@ -46,22 +46,22 @@
     background:transparent;
     color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    padding-bottom:16px;
+    padding-bottom:6px;
     overscroll-behavior-y:none;
   }
   .app{
     max-width:480px;
     margin:0 auto;
-    padding:calc(16px + env(safe-area-inset-top)) 16px calc(8px + env(safe-area-inset-bottom));
+    padding:calc(8px + env(safe-area-inset-top)) 14px calc(4px + env(safe-area-inset-bottom));
   }
   header{
     position:relative;
     text-align:center;
-    margin-bottom:10px;
+    margin-bottom:6px;
   }
   header h1{
-    font-size:2rem;
-    letter-spacing:0.35em;
+    font-size:1.5rem;
+    letter-spacing:0.3em;
     margin:0;
     font-weight:800;
     background:linear-gradient(180deg,#f2e6e9,var(--burgundy-bright));
@@ -71,15 +71,15 @@
   }
   header p{
     color:var(--text-dim);
-    font-size:0.8rem;
-    margin:4px 0 0;
+    font-size:0.68rem;
+    margin:2px 0 0;
   }
   .settings-btn{
     position:absolute;
     top:0;
     right:0;
-    width:32px;
-    height:32px;
+    width:28px;
+    height:28px;
     border-radius:50%;
     background:rgba(255,255,255,0.03);
     border:1px solid var(--card-border);
@@ -95,14 +95,14 @@
   section.card{
     background:linear-gradient(155deg, rgba(255,255,255,0.03), rgba(0,0,0,0.15));
     border:1px solid var(--card-border);
-    border-radius:16px;
-    padding:14px;
-    margin-bottom:10px;
+    border-radius:14px;
+    padding:10px;
+    margin-bottom:6px;
     box-shadow:0 8px 24px rgba(0,0,0,0.35);
   }
   .card h2{
-    margin:0 0 8px;
-    font-size:0.72rem;
+    margin:0 0 5px;
+    font-size:0.66rem;
     text-transform:uppercase;
     letter-spacing:0.12em;
     color:var(--text-dim);
@@ -112,18 +112,18 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:10px;
-    margin-bottom:10px;
+    gap:8px;
+    margin-bottom:6px;
   }
   .today-nav button{
     background:none;
     border:1px solid var(--card-border);
     color:var(--text);
     border-radius:8px;
-    width:30px;
-    height:30px;
+    width:26px;
+    height:26px;
     cursor:pointer;
-    font-size:1rem;
+    font-size:0.9rem;
     flex-shrink:0;
   }
   .today-nav button:disabled{
@@ -133,9 +133,9 @@
   .today-date-label{
     flex:1;
     text-align:center;
-    font-size:0.9rem;
+    font-size:0.82rem;
     color:var(--text-dim);
-    padding:6px 4px;
+    padding:4px 4px;
     border-radius:10px;
     border:1.5px solid transparent;
   }
@@ -148,25 +148,25 @@
   .jump-today{
     display:block;
     text-align:center;
-    font-size:0.74rem;
+    font-size:0.68rem;
     color:var(--burgundy-bright);
     text-decoration:underline;
     cursor:pointer;
-    margin:-4px 0 10px;
+    margin:-2px 0 6px;
   }
-  .jump-today.hidden{ display:none; }
+  .jump-today.hidden{ visibility:hidden; }
   .choice-row{
     display:flex;
-    gap:10px;
+    gap:8px;
   }
   .choice-btn{
     flex:1;
-    padding:14px 6px;
+    padding:9px 6px;
     border-radius:12px;
     border:1.5px solid var(--card-border);
     background:rgba(255,255,255,0.02);
     color:var(--text);
-    font-size:0.95rem;
+    font-size:0.88rem;
     font-weight:700;
     cursor:pointer;
     transition:all 0.15s ease;
@@ -175,9 +175,9 @@
   .choice-btn small{
     display:block;
     font-weight:400;
-    font-size:0.7rem;
+    font-size:0.62rem;
     color:var(--text-dim);
-    margin-top:4px;
+    margin-top:2px;
   }
   .choice-btn:active{ transform:scale(0.96); }
   .choice-btn.none{ border-color:rgba(63,143,122,0.4); }
