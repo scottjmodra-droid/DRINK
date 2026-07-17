@@ -370,6 +370,84 @@
     margin-top:10px;
   }
 
+  .settings-section{
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid var(--card-border);
+  }
+  .settings-section:first-of-type{
+    margin-top:0;
+    padding-top:0;
+    border-top:none;
+  }
+  .settings-section h4{
+    margin:0 0 10px;
+    font-size:0.68rem;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--text-dim);
+    font-weight:700;
+  }
+  .settings-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:8px;
+    font-size:0.85rem;
+  }
+  .settings-row label{ color:var(--text); }
+  .settings-row input[type=number]{
+    width:60px;
+    padding:6px 8px;
+    border-radius:8px;
+    border:1px solid var(--card-border);
+    background:rgba(255,255,255,0.04);
+    color:var(--text);
+    font-size:0.9rem;
+    text-align:center;
+  }
+  .settings-row input[type=number]:focus{
+    outline:none;
+    border-color:var(--burgundy-bright);
+  }
+  .settings-static{
+    color:var(--text-dim);
+    font-size:0.85rem;
+  }
+  .settings-range{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .settings-range span{
+    color:var(--text-dim);
+    font-size:0.8rem;
+  }
+  .settings-range input[type=number]{
+    width:50px;
+  }
+  .goal-toggle-label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:var(--text);
+    cursor:pointer;
+  }
+  .goal-toggle{
+    accent-color:var(--burgundy-bright);
+    width:16px;
+    height:16px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .settings-row input[type=number]:disabled,
+  .settings-row .settings-range.disabled input[type=number]{
+    opacity:0.35;
+    cursor:not-allowed;
+  }
+  .settings-row.goal-off .goal-toggle-label{ color:var(--text-dim); }
+
   /* Modal */
   .modal-overlay{
     position:fixed; inset:0;
@@ -450,9 +528,9 @@
       </div>
       <div class="jump-today hidden" id="jumpToday">jump back to today</div>
       <div class="choice-row">
-        <button class="choice-btn none" data-choice="none">Zero<small>0 drinks</small></button>
-        <button class="choice-btn light" data-choice="light">Light<small>1–2</small></button>
-        <button class="choice-btn full" data-choice="full">Full<small>3+</small></button>
+        <button class="choice-btn none" data-choice="none">Zero<small id="lblZero">0 drinks</small></button>
+        <button class="choice-btn light" data-choice="light">Light<small id="lblLight">1–2</small></button>
+        <button class="choice-btn full" data-choice="full">Full<small id="lblFull">3+</small></button>
       </div>
       <div class="clear-link" id="clearSelected">clear this entry</div>
     </section>
@@ -464,19 +542,19 @@
         <div class="tally-item none">
           <div class="num" id="tallyNone">0</div>
           <div class="lbl">Zero</div>
-          <div class="goal">goal ≥2</div>
+          <div class="goal" id="goalNoneText">goal ≥2</div>
           <div class="bar-track"><div class="bar-fill none" id="barNone" style="width:0%"></div></div>
         </div>
         <div class="tally-item light">
           <div class="num" id="tallyLight">0</div>
           <div class="lbl">Light</div>
-          <div class="goal">&nbsp;</div>
+          <div class="goal" id="goalLightText">goal 2–4</div>
           <div class="bar-track"><div class="bar-fill light" id="barLight" style="width:0%"></div></div>
         </div>
         <div class="tally-item full">
           <div class="num" id="tallyFull">0</div>
           <div class="lbl">Full</div>
-          <div class="goal">goal ≤2</div>
+          <div class="goal" id="goalFullText">goal ≤2</div>
           <div class="bar-track"><div class="bar-fill full" id="barFull" style="width:0%"></div></div>
         </div>
       </div>
@@ -504,9 +582,9 @@
       <h3 id="modalDate"></h3>
       <p>Set this day's entry.</p>
       <div class="choice-row">
-        <button class="choice-btn none" data-mchoice="none">Zero<small>0 drinks</small></button>
-        <button class="choice-btn light" data-mchoice="light">Light<small>1–2</small></button>
-        <button class="choice-btn full" data-mchoice="full">Full<small>3+</small></button>
+        <button class="choice-btn none" data-mchoice="none">Zero<small id="mLblZero">0 drinks</small></button>
+        <button class="choice-btn light" data-mchoice="light">Light<small id="mLblLight">1–2</small></button>
+        <button class="choice-btn full" data-mchoice="full">Full<small id="mLblFull">3+</small></button>
       </div>
       <div class="modal-actions">
         <button id="modalClear">Clear entry</button>
@@ -518,13 +596,65 @@
   <div class="modal-overlay" id="settingsModal">
     <div class="modal">
       <h3>Settings</h3>
-      <p>Backup your data or restore from a file.</p>
-      <div class="backup-row">
-        <button id="exportBtn">Export data</button>
-        <button id="importBtn">Import data</button>
+      <p>Adjust your weekly goals, drink-count ranges, or back up your data.</p>
+
+      <div class="settings-section">
+        <h4>Weekly goals</h4>
+        <div class="settings-row">
+          <label class="goal-toggle-label">
+            <input type="checkbox" id="toggleZeroGoal" class="goal-toggle">
+            Zero days (at least)
+          </label>
+          <input type="number" id="settingZeroGoal" min="0" max="7" step="1">
+        </div>
+        <div class="settings-row">
+          <label class="goal-toggle-label">
+            <input type="checkbox" id="toggleLightGoal" class="goal-toggle">
+            Light days (range)
+          </label>
+          <div class="settings-range">
+            <input type="number" id="settingLightGoalMin" min="0" max="7" step="1">
+            <span>–</span>
+            <input type="number" id="settingLightGoalMax" min="0" max="7" step="1">
+          </div>
+        </div>
+        <div class="settings-row">
+          <label class="goal-toggle-label">
+            <input type="checkbox" id="toggleFullGoal" class="goal-toggle">
+            Full days (at most)
+          </label>
+          <input type="number" id="settingFullGoal" min="0" max="7" step="1">
+        </div>
       </div>
-      <input type="file" id="importFile" accept="application/json">
-      <div class="privacy-note">Everything stays in this browser's local storage. Nothing is sent anywhere. Export regularly if you want a backup.</div>
+
+      <div class="settings-section">
+        <h4>Drink counts</h4>
+        <div class="settings-row">
+          <label>Zero</label>
+          <span class="settings-static">0 drinks</span>
+        </div>
+        <div class="settings-row">
+          <label for="settingLightMax">Light: 1 to</label>
+          <input type="number" id="settingLightMax" min="1" max="20" step="1">
+        </div>
+        <div class="settings-row">
+          <label for="settingFullMin">Full: at least</label>
+          <input type="number" id="settingFullMin" min="1" max="50" step="1">
+        </div>
+      </div>
+
+      <div class="clear-link" id="resetSettings">reset goals &amp; counts to defaults</div>
+
+      <div class="settings-section">
+        <h4>Backup</h4>
+        <div class="backup-row">
+          <button id="exportBtn">Export data</button>
+          <button id="importBtn">Import data</button>
+        </div>
+        <input type="file" id="importFile" accept="application/json">
+        <div class="privacy-note">Everything stays in this browser's local storage. Nothing is sent anywhere. Export regularly if you want a backup.</div>
+      </div>
+
       <div class="modal-actions">
         <button id="settingsClose">Close</button>
       </div>
@@ -547,6 +677,38 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }
   let data = loadData();
+
+  // ---------- Settings (goals & drink-count ranges) ----------
+  const SETTINGS_KEY = 'drink-tracker-settings-v1';
+  const DEFAULT_SETTINGS = {
+    zeroGoal:2, lightGoalMin:2, lightGoalMax:4, fullGoal:2,
+    zeroGoalEnabled:true, lightGoalEnabled:true, fullGoalEnabled:true,
+    lightMax:2, fullMin:3
+  };
+  function loadSettings(){
+    try{
+      const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      return Object.assign({}, DEFAULT_SETTINGS, s);
+    }catch(e){ return Object.assign({}, DEFAULT_SETTINGS); }
+  }
+  function saveSettings(s){
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  }
+  let settings = loadSettings();
+  function clamp(val, min, max){
+    let n = Math.round(Number(val));
+    if(isNaN(n)) n = min;
+    return Math.min(max, Math.max(min, n));
+  }
+  function applyLabels(){
+    document.getElementById('lblLight').textContent = '1–' + settings.lightMax;
+    document.getElementById('lblFull').textContent = settings.fullMin + '+';
+    document.getElementById('mLblLight').textContent = '1–' + settings.lightMax;
+    document.getElementById('mLblFull').textContent = settings.fullMin + '+';
+    document.getElementById('goalNoneText').textContent = settings.zeroGoalEnabled ? ('goal ≥' + settings.zeroGoal) : ' ';
+    document.getElementById('goalLightText').textContent = settings.lightGoalEnabled ? ('goal ' + settings.lightGoalMin + '–' + settings.lightGoalMax) : ' ';
+    document.getElementById('goalFullText').textContent = settings.fullGoalEnabled ? ('goal ≤' + settings.fullGoal) : ' ';
+  }
 
   function pad(n){ return n < 10 ? '0'+n : ''+n; }
   function keyFor(d){
@@ -648,16 +810,16 @@
     document.getElementById('tallyLight').textContent = counts.light;
     document.getElementById('tallyFull').textContent = counts.full;
 
-    document.getElementById('barNone').style.width = Math.min(100, counts.none/2*100) + '%';
-    document.getElementById('barLight').style.width = Math.min(100, counts.light/3*100) + '%';
-    document.getElementById('barFull').style.width = Math.min(100, counts.full/2*100) + '%';
+    document.getElementById('barNone').style.width = Math.min(100, counts.none/Math.max(1,settings.zeroGoal)*100) + '%';
+    document.getElementById('barLight').style.width = Math.min(100, counts.light/Math.max(1,settings.lightGoalMax)*100) + '%';
+    document.getElementById('barFull').style.width = Math.min(100, counts.full/Math.max(1,settings.fullGoal)*100) + '%';
 
     const loggedDays = counts.none + counts.light + counts.full;
     let note = '';
     if(loggedDays === 0){
       note = 'No days logged yet this week.';
-    } else if(counts.full > 2){
-      note = 'Full days over target (' + counts.full + '/2) — a lighter day soon would help.';
+    } else if(settings.fullGoalEnabled && counts.full > settings.fullGoal){
+      note = 'Full days over target (' + counts.full + '/' + settings.fullGoal + ') — a lighter day soon would help.';
     } else if(loggedDays < 7){
       note = (7-loggedDays) + ' day' + ((7-loggedDays)===1?'':'s') + ' left to log this week.';
     } else {
@@ -736,7 +898,7 @@
       const marksEl = document.createElement('div');
       marksEl.className = 'week-marks';
 
-      if(rowMonday <= today){
+      if(rowMonday <= today && (settings.zeroGoalEnabled || settings.lightGoalEnabled || settings.fullGoalEnabled)){
         let wc = { none:0, light:0, full:0 };
         for(let i=0;i<7;i++){
           const dd = new Date(rowMonday);
@@ -744,14 +906,23 @@
           const vv = data[keyFor(dd)];
           if(vv && wc.hasOwnProperty(vv)) wc[vv]++;
         }
-        const noneMet = wc.none >= 2;
-        const fullMet = wc.full <= 2;
         const pending = rowSunday > today;
-
         if(pending) marksEl.classList.add('pending');
-        marksEl.innerHTML =
-          '<span class="mark ' + (noneMet?'pass':'fail') + '" title="' + wc.none + ' Zero day(s), goal ≥ 2">' + (noneMet?'✓':'✕') + '0</span>' +
-          '<span class="mark ' + (fullMet?'pass':'fail') + '" title="' + wc.full + ' Full day(s), goal ≤ 2">' + (fullMet?'✓':'✕') + 'F</span>';
+
+        let html = '';
+        if(settings.zeroGoalEnabled){
+          const noneMet = wc.none >= settings.zeroGoal;
+          html += '<span class="mark ' + (noneMet?'pass':'fail') + '" title="' + wc.none + ' Zero day(s), goal ≥ ' + settings.zeroGoal + '">' + (noneMet?'✓':'✕') + '0</span>';
+        }
+        if(settings.lightGoalEnabled){
+          const lightMet = wc.light >= settings.lightGoalMin && wc.light <= settings.lightGoalMax;
+          html += '<span class="mark ' + (lightMet?'pass':'fail') + '" title="' + wc.light + ' Light day(s), goal ' + settings.lightGoalMin + '–' + settings.lightGoalMax + '">' + (lightMet?'✓':'✕') + 'L</span>';
+        }
+        if(settings.fullGoalEnabled){
+          const fullMet = wc.full <= settings.fullGoal;
+          html += '<span class="mark ' + (fullMet?'pass':'fail') + '" title="' + wc.full + ' Full day(s), goal ≤ ' + settings.fullGoal + '">' + (fullMet?'✓':'✕') + 'F</span>';
+        }
+        marksEl.innerHTML = html;
       }
       grid.appendChild(marksEl);
     }
@@ -810,9 +981,40 @@
     if(e.target === modalOverlay) closeModal();
   });
 
-  // ---------- Settings modal (backup) ----------
+  // ---------- Settings modal (goals, drink counts, backup) ----------
   const settingsOverlay = document.getElementById('settingsModal');
+  const zeroGoalInput = document.getElementById('settingZeroGoal');
+  const fullGoalInput = document.getElementById('settingFullGoal');
+  const lightGoalMinInput = document.getElementById('settingLightGoalMin');
+  const lightGoalMaxInput = document.getElementById('settingLightGoalMax');
+  const lightMaxInput = document.getElementById('settingLightMax');
+  const fullMinInput = document.getElementById('settingFullMin');
+  const zeroGoalToggle = document.getElementById('toggleZeroGoal');
+  const lightGoalToggle = document.getElementById('toggleLightGoal');
+  const fullGoalToggle = document.getElementById('toggleFullGoal');
+
+  function updateGoalToggleStates(){
+    zeroGoalInput.disabled = !settings.zeroGoalEnabled;
+    lightGoalMinInput.disabled = !settings.lightGoalEnabled;
+    lightGoalMaxInput.disabled = !settings.lightGoalEnabled;
+    fullGoalInput.disabled = !settings.fullGoalEnabled;
+  }
+
+  function populateSettingsInputs(){
+    zeroGoalInput.value = settings.zeroGoal;
+    fullGoalInput.value = settings.fullGoal;
+    lightGoalMinInput.value = settings.lightGoalMin;
+    lightGoalMaxInput.value = settings.lightGoalMax;
+    lightMaxInput.value = settings.lightMax;
+    fullMinInput.value = settings.fullMin;
+    zeroGoalToggle.checked = settings.zeroGoalEnabled;
+    lightGoalToggle.checked = settings.lightGoalEnabled;
+    fullGoalToggle.checked = settings.fullGoalEnabled;
+    updateGoalToggleStates();
+  }
+
   document.getElementById('settingsBtn').addEventListener('click', ()=>{
+    populateSettingsInputs();
     settingsOverlay.classList.add('open');
   });
   document.getElementById('settingsClose').addEventListener('click', ()=>{
@@ -820,6 +1022,74 @@
   });
   settingsOverlay.addEventListener('click', (e)=>{
     if(e.target === settingsOverlay) settingsOverlay.classList.remove('open');
+  });
+
+  zeroGoalInput.addEventListener('change', ()=>{
+    settings.zeroGoal = clamp(zeroGoalInput.value, 0, 7);
+    zeroGoalInput.value = settings.zeroGoal;
+    saveSettings(settings);
+    renderAll();
+  });
+  fullGoalInput.addEventListener('change', ()=>{
+    settings.fullGoal = clamp(fullGoalInput.value, 0, 7);
+    fullGoalInput.value = settings.fullGoal;
+    saveSettings(settings);
+    renderAll();
+  });
+  lightGoalMinInput.addEventListener('change', ()=>{
+    let v = clamp(lightGoalMinInput.value, 0, 7);
+    if(v > settings.lightGoalMax) settings.lightGoalMax = v;
+    settings.lightGoalMin = v;
+    lightGoalMinInput.value = settings.lightGoalMin;
+    lightGoalMaxInput.value = settings.lightGoalMax;
+    saveSettings(settings);
+    renderAll();
+  });
+  lightGoalMaxInput.addEventListener('change', ()=>{
+    let v = clamp(lightGoalMaxInput.value, 0, 7);
+    if(v < settings.lightGoalMin) settings.lightGoalMin = v;
+    settings.lightGoalMax = v;
+    lightGoalMinInput.value = settings.lightGoalMin;
+    lightGoalMaxInput.value = settings.lightGoalMax;
+    saveSettings(settings);
+    renderAll();
+  });
+  zeroGoalToggle.addEventListener('change', ()=>{
+    settings.zeroGoalEnabled = zeroGoalToggle.checked;
+    updateGoalToggleStates();
+    saveSettings(settings);
+    renderAll();
+  });
+  lightGoalToggle.addEventListener('change', ()=>{
+    settings.lightGoalEnabled = lightGoalToggle.checked;
+    updateGoalToggleStates();
+    saveSettings(settings);
+    renderAll();
+  });
+  fullGoalToggle.addEventListener('change', ()=>{
+    settings.fullGoalEnabled = fullGoalToggle.checked;
+    updateGoalToggleStates();
+    saveSettings(settings);
+    renderAll();
+  });
+  lightMaxInput.addEventListener('change', ()=>{
+    settings.lightMax = clamp(lightMaxInput.value, 1, 20);
+    lightMaxInput.value = settings.lightMax;
+    saveSettings(settings);
+    renderAll();
+  });
+  fullMinInput.addEventListener('change', ()=>{
+    settings.fullMin = clamp(fullMinInput.value, 1, 50);
+    fullMinInput.value = settings.fullMin;
+    saveSettings(settings);
+    renderAll();
+  });
+  document.getElementById('resetSettings').addEventListener('click', ()=>{
+    settings = Object.assign({}, DEFAULT_SETTINGS);
+    saveSettings(settings);
+    populateSettingsInputs();
+    renderAll();
+    showToast('Settings reset to defaults');
   });
 
   document.getElementById('exportBtn').addEventListener('click', ()=>{
@@ -863,6 +1133,7 @@
 
   // ---------- Render all ----------
   function renderAll(){
+    applyLabels();
     renderTodayCard();
     renderWeek();
     renderCalendar();
