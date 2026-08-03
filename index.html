@@ -303,8 +303,9 @@
     border:1px solid transparent;
     position:relative;
   }
-  .cal-day.empty{ visibility:hidden; cursor:default; }
   .cal-day.future{ opacity:0.3; cursor:default; }
+  .cal-day.other-month{ opacity:0.4; }
+  .cal-day.other-month.future{ opacity:0.18; }
   .cal-day.none{ background:var(--none-dim); color:#cdf5e9; border-color:var(--none); }
   .cal-day.light{ background:var(--light-dim); color:#ffe9bd; border-color:var(--light); }
   .cal-day.full{ background:var(--full-dim); color:#ffd0da; border-color:var(--full); }
@@ -877,24 +878,25 @@
         const dayNum = cellIndex - firstDow + 1;
         const el = document.createElement('div');
 
-        if(dayNum < 1 || dayNum > daysInMonth){
-          el.className = 'cal-day empty';
-        } else {
-          const d = new Date(viewYear, viewMonth, dayNum);
-          const k = keyFor(d);
-          el.className = 'cal-day';
-          el.textContent = dayNum;
+        // new Date() auto-resolves out-of-range day numbers into the
+        // adjacent month, so every row always shows a complete real
+        // Mon–Sun week — weeks stay the relevant unit even when they
+        // cross a month boundary, instead of being cut off as blanks.
+        const d = new Date(viewYear, viewMonth, dayNum);
+        const isOtherMonth = (dayNum < 1 || dayNum > daysInMonth);
+        const k = keyFor(d);
+        el.className = 'cal-day' + (isOtherMonth ? ' other-month' : '');
+        el.textContent = d.getDate();
 
-          if(d > today){
-            el.classList.add('future');
-          } else {
-            const v = data[k];
-            if(v) el.classList.add(v);
-            el.addEventListener('click', ()=> openModal(k, d));
-          }
-          if(k === todayKey){
-            el.classList.add('today-marker');
-          }
+        if(d > today){
+          el.classList.add('future');
+        } else {
+          const v = data[k];
+          if(v) el.classList.add(v);
+          el.addEventListener('click', ()=> openModal(k, d));
+        }
+        if(k === todayKey){
+          el.classList.add('today-marker');
         }
         grid.appendChild(el);
       }
