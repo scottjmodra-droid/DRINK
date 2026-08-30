@@ -26,8 +26,8 @@
     --none-dim:#1f3c34;
     --light:#c99a3c;
     --light-dim:#4a3a19;
-    --full:#c9314f;
-    --full-dim:#4a141f;
+    --full:#3560d9;
+    --full-dim:#161f42;
     --unset:#3a2a2f;
     --card-border:rgba(255,255,255,0.06);
   }
@@ -192,10 +192,10 @@
   .choice-btn:active{ transform:scale(0.96); }
   .choice-btn.none{ border-color:rgba(63,143,122,0.4); }
   .choice-btn.light{ border-color:rgba(201,154,60,0.4); }
-  .choice-btn.full{ border-color:rgba(201,49,79,0.4); }
+  .choice-btn.full{ border-color:rgba(53,96,217,0.4); }
   .choice-btn.none.active{ background:var(--none-dim); border-color:var(--none); color:#cdf5e9; }
   .choice-btn.light.active{ background:var(--light-dim); border-color:var(--light); color:#ffe9bd; }
-  .choice-btn.full.active{ background:var(--full-dim); border-color:var(--full); color:#ffd0da; }
+  .choice-btn.full.active{ background:var(--full-dim); border-color:var(--full); color:#cfdcff; }
   .clear-link{
     display:block;
     text-align:center;
@@ -306,7 +306,7 @@
   .cal-day.future{ opacity:0.3; cursor:default; }
   .cal-day.none{ background:var(--none-dim); color:#cdf5e9; border-color:var(--none); }
   .cal-day.light{ background:var(--light-dim); color:#ffe9bd; border-color:var(--light); }
-  .cal-day.full{ background:var(--full-dim); color:#ffd0da; border-color:var(--full); }
+  .cal-day.full{ background:var(--full-dim); color:#cfdcff; border-color:var(--full); }
   .cal-day.today-marker::after{
     content:"";
     position:absolute;
@@ -348,6 +348,10 @@
     display:flex;
     align-items:center;
     gap:5px;
+  }
+  .legend b{
+    color:var(--text);
+    font-weight:700;
   }
   .legend i{
     width:9px;height:9px;border-radius:3px;display:inline-block;
@@ -523,7 +527,7 @@
 <body>
   <div class="app">
     <header>
-      <span class="version-tag" id="versionTag">v1.2</span>
+      <span class="version-tag" id="versionTag">v1.3</span>
       <button class="settings-btn" id="settingsBtn" aria-label="Settings">⚙</button>
       <h1>DRINK</h1>
       <p>drinking is cool but maybe not all the time</p>
@@ -580,9 +584,9 @@
       </div>
       <div class="cal-grid" id="calGrid"></div>
       <div class="legend">
-        <span><i class="none"></i>Zero</span>
-        <span><i class="light"></i>Light</span>
-        <span><i class="full"></i>Full</span>
+        <span><i class="none"></i>Zero <b id="pctNone">–</b></span>
+        <span><i class="light"></i>Light <b id="pctLight">–</b></span>
+        <span><i class="full"></i>Full <b id="pctFull">–</b></span>
       </div>
     </section>
   </div>
@@ -845,6 +849,21 @@
   const monthFmt = new Intl.DateTimeFormat(undefined, { month:'long', year:'numeric' });
   const DOW = ['Mo','Tu','We','Th','Fr','Sa','Su'];
 
+  function renderMonthStats(daysInMonth){
+    let mc = { none:0, light:0, full:0 };
+    for(let day=1; day<=daysInMonth; day++){
+      const d = new Date(viewYear, viewMonth, day);
+      if(d > today) continue; // don't count future days that haven't happened yet
+      const v = data[keyFor(d)];
+      if(v && mc.hasOwnProperty(v)) mc[v]++;
+    }
+    const total = mc.none + mc.light + mc.full;
+    function pct(n){ return total > 0 ? Math.round(n/total*100) + '%' : '–'; }
+    document.getElementById('pctNone').textContent = pct(mc.none);
+    document.getElementById('pctLight').textContent = pct(mc.light);
+    document.getElementById('pctFull').textContent = pct(mc.full);
+  }
+
   function renderCalendar(){
     const label = monthFmt.format(new Date(viewYear, viewMonth, 1));
     document.getElementById('monthLabel').textContent = label;
@@ -869,6 +888,7 @@
     const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
     const totalCells = firstDow + daysInMonth;
     const totalRows = Math.ceil(totalCells/7);
+    renderMonthStats(daysInMonth);
 
     for(let row=0; row<totalRows; row++){
       for(let col=0; col<7; col++){
