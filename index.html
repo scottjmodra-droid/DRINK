@@ -527,7 +527,7 @@
 <body>
   <div class="app">
     <header>
-      <span class="version-tag" id="versionTag">v1.3</span>
+      <span class="version-tag" id="versionTag">v1.5</span>
       <button class="settings-btn" id="settingsBtn" aria-label="Settings">⚙</button>
       <h1>DRINK</h1>
       <p>drinking is cool but maybe not all the time</p>
@@ -850,15 +850,20 @@
   const DOW = ['Mo','Tu','We','Th','Fr','Sa','Su'];
 
   function renderMonthStats(daysInMonth){
+    // Percentages are of the days of this month that have actually
+    // happened so far — the full month (1st–last day) for a past month,
+    // or 1st–today for the current, in-progress month.
+    const isCurrentMonth = (viewYear === today.getFullYear() && viewMonth === today.getMonth());
+    const denomDays = isCurrentMonth ? today.getDate() : daysInMonth;
+
     let mc = { none:0, light:0, full:0 };
     for(let day=1; day<=daysInMonth; day++){
       const d = new Date(viewYear, viewMonth, day);
-      if(d > today) continue; // don't count future days that haven't happened yet
+      if(d > today) continue; // future days haven't happened yet, can't be logged
       const v = data[keyFor(d)];
       if(v && mc.hasOwnProperty(v)) mc[v]++;
     }
-    const total = mc.none + mc.light + mc.full;
-    function pct(n){ return total > 0 ? Math.round(n/total*100) + '%' : '–'; }
+    function pct(n){ return Math.round(n/denomDays*100) + '%'; }
     document.getElementById('pctNone').textContent = pct(mc.none);
     document.getElementById('pctLight').textContent = pct(mc.light);
     document.getElementById('pctFull').textContent = pct(mc.full);
