@@ -224,22 +224,30 @@
     flex-shrink:0;
   }
   .month-bar{
-    width:24px;
-    height:110px;
+    width:30px;
+    height:130px;
     border-radius:5px;
-    background:rgba(255,255,255,0.04);
     display:flex;
     flex-direction:column-reverse;
     overflow:hidden;
     cursor:pointer;
-    border:1px solid transparent;
-    transition:border-color 0.15s ease;
+    transition:transform 0.15s ease;
   }
-  .month-bar:active{ border-color:var(--burgundy-bright); }
-  .month-bar .seg{ width:100%; }
-  .month-bar .seg.none{ background:var(--none); }
-  .month-bar .seg.light{ background:var(--light); }
-  .month-bar .seg.full{ background:var(--full); }
+  .month-bar:active{ transform:scale(0.95); }
+  .month-bar .seg{
+    width:100%;
+    box-sizing:border-box;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:0.56rem;
+    font-weight:800;
+    line-height:1;
+    overflow:hidden;
+  }
+  .month-bar .seg.none{ background:var(--none-dim); border:1.5px solid var(--none); color:#cdf5e9; }
+  .month-bar .seg.light{ background:var(--light-dim); border:1.5px solid var(--light); color:#ffe9bd; }
+  .month-bar .seg.full{ background:var(--full-dim); border:1.5px solid var(--full); color:#cfdcff; }
   .month-col-label{
     font-size:0.6rem;
     color:var(--text-dim);
@@ -515,7 +523,7 @@
 <body>
   <div class="app">
     <header>
-      <span class="version-tag" id="versionTag">v1.7</span>
+      <span class="version-tag" id="versionTag">v1.8</span>
       <button class="settings-btn" id="settingsBtn" aria-label="Settings">⚙</button>
       <h1>DRINK</h1>
       <p>drinking is cool but maybe not all the time</p>
@@ -811,10 +819,12 @@
       bar.className = 'month-bar';
       bar.title = monthChartTitleFmt.format(mDate) + ' — ' +
         Math.round(pctNone) + '% Zero, ' + Math.round(pctLight) + '% Light, ' + Math.round(pctFull) + '% Full (' + total + ' day' + (total===1?'':'s') + ' logged)';
+      const LABEL_MIN_PCT = 9; // hide the number on slivers too small to read
+      function segLabel(p){ return p >= LABEL_MIN_PCT ? Math.round(p) + '%' : ''; }
       bar.innerHTML =
-        '<div class="seg none" style="height:' + pctNone + '%"></div>' +
-        '<div class="seg light" style="height:' + pctLight + '%"></div>' +
-        '<div class="seg full" style="height:' + pctFull + '%"></div>';
+        '<div class="seg none" style="height:' + pctNone + '%">' + segLabel(pctNone) + '</div>' +
+        '<div class="seg light" style="height:' + pctLight + '%">' + segLabel(pctLight) + '</div>' +
+        '<div class="seg full" style="height:' + pctFull + '%">' + segLabel(pctFull) + '</div>';
       bar.addEventListener('click', ()=>{
         viewYear = y;
         viewMonth = m-1;
