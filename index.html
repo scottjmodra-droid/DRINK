@@ -206,58 +206,46 @@
     cursor:pointer;
   }
 
-  .week-range{
-    text-align:center;
-    color:var(--text-dim);
-    font-size:0.76rem;
-    margin-top:-6px;
-    margin-bottom:8px;
-  }
-  .tally{
+  .month-chart{
     display:flex;
-    justify-content:space-between;
+    align-items:flex-end;
     gap:10px;
-    margin-bottom:4px;
+    overflow-x:auto;
+    padding:4px 2px 2px;
+    -webkit-overflow-scrolling:touch;
   }
-  .tally-item{
-    flex:1;
-    text-align:center;
+  .month-chart::-webkit-scrollbar{ height:4px; }
+  .month-chart::-webkit-scrollbar-thumb{ background:var(--card-border); border-radius:4px; }
+  .month-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    flex-shrink:0;
   }
-  .tally-item .num{
-    font-size:1.35rem;
-    font-weight:800;
-  }
-  .tally-item.none .num{ color:var(--none); }
-  .tally-item.light .num{ color:var(--light); }
-  .tally-item.full .num{ color:var(--full); }
-  .tally-item .lbl{
-    font-size:0.66rem;
-    color:var(--text-dim);
-    text-transform:uppercase;
-    letter-spacing:0.08em;
-  }
-  .tally-item .goal{
-    font-size:0.66rem;
-    color:var(--text-dim);
-    margin-top:2px;
-  }
-  .bar-track{
-    height:7px;
-    border-radius:6px;
-    background:rgba(255,255,255,0.05);
+  .month-bar{
+    width:24px;
+    height:110px;
+    border-radius:5px;
+    background:rgba(255,255,255,0.04);
+    display:flex;
+    flex-direction:column-reverse;
     overflow:hidden;
-    margin-top:6px;
+    cursor:pointer;
+    border:1px solid transparent;
+    transition:border-color 0.15s ease;
   }
-  .bar-fill{ height:100%; border-radius:6px; transition:width 0.3s ease; }
-  .bar-fill.none{ background:var(--none); }
-  .bar-fill.light{ background:var(--light); }
-  .bar-fill.full{ background:var(--full); }
-  .week-note{
-    font-size:0.76rem;
+  .month-bar:active{ border-color:var(--burgundy-bright); }
+  .month-bar .seg{ width:100%; }
+  .month-bar .seg.none{ background:var(--none); }
+  .month-bar .seg.light{ background:var(--light); }
+  .month-bar .seg.full{ background:var(--full); }
+  .month-col-label{
+    font-size:0.6rem;
     color:var(--text-dim);
-    text-align:center;
-    margin-top:8px;
+    white-space:nowrap;
   }
+  .month-col-label.current{ color:var(--text); font-weight:700; }
 
   .cal-header{
     display:flex;
@@ -527,7 +515,7 @@
 <body>
   <div class="app">
     <header>
-      <span class="version-tag" id="versionTag">v1.5</span>
+      <span class="version-tag" id="versionTag">v1.7</span>
       <button class="settings-btn" id="settingsBtn" aria-label="Settings">⚙</button>
       <h1>DRINK</h1>
       <p>drinking is cool but maybe not all the time</p>
@@ -549,33 +537,7 @@
       <div class="clear-link" id="clearSelected">clear this entry</div>
     </section>
 
-    <section class="card">
-      <h2>This Week</h2>
-      <div class="week-range" id="weekRange"></div>
-      <div class="tally">
-        <div class="tally-item none">
-          <div class="num" id="tallyNone">0</div>
-          <div class="lbl">Zero</div>
-          <div class="goal" id="goalNoneText">goal ≥2</div>
-          <div class="bar-track"><div class="bar-fill none" id="barNone" style="width:0%"></div></div>
-        </div>
-        <div class="tally-item light">
-          <div class="num" id="tallyLight">0</div>
-          <div class="lbl">Light</div>
-          <div class="goal" id="goalLightText">goal 2–4</div>
-          <div class="bar-track"><div class="bar-fill light" id="barLight" style="width:0%"></div></div>
-        </div>
-        <div class="tally-item full">
-          <div class="num" id="tallyFull">0</div>
-          <div class="lbl">Full</div>
-          <div class="goal" id="goalFullText">goal ≤2</div>
-          <div class="bar-track"><div class="bar-fill full" id="barFull" style="width:0%"></div></div>
-        </div>
-      </div>
-      <div class="week-note" id="weekNote"></div>
-    </section>
-
-    <section class="card">
+    <section class="card" id="calendarCard">
       <h2>Calendar</h2>
       <div class="cal-header">
         <button id="prevMonth">‹</button>
@@ -584,10 +546,15 @@
       </div>
       <div class="cal-grid" id="calGrid"></div>
       <div class="legend">
-        <span><i class="none"></i>Zero <b id="pctNone">–</b></span>
-        <span><i class="light"></i>Light <b id="pctLight">–</b></span>
-        <span><i class="full"></i>Full <b id="pctFull">–</b></span>
+        <span><i class="none"></i>Zero</span>
+        <span><i class="light"></i>Light</span>
+        <span><i class="full"></i>Full</span>
       </div>
+    </section>
+
+    <section class="card">
+      <h2>Monthly Breakdown</h2>
+      <div class="month-chart" id="monthChart"></div>
     </section>
   </div>
 
@@ -719,9 +686,6 @@
     document.getElementById('lblFull').textContent = settings.fullMin + '+';
     document.getElementById('mLblLight').textContent = '1–' + settings.lightMax;
     document.getElementById('mLblFull').textContent = settings.fullMin + '+';
-    document.getElementById('goalNoneText').textContent = settings.zeroGoalEnabled ? ('goal ≥' + settings.zeroGoal) : ' ';
-    document.getElementById('goalLightText').textContent = settings.lightGoalEnabled ? ('goal ' + settings.lightGoalMin + '–' + settings.lightGoalMax) : ' ';
-    document.getElementById('goalFullText').textContent = settings.fullGoalEnabled ? ('goal ≤' + settings.fullGoal) : ' ';
   }
 
   function pad(n){ return n < 10 ? '0'+n : ''+n; }
@@ -794,54 +758,6 @@
     renderTodayCard();
   });
 
-  // ---------- Week summary (Mon–Sun) ----------
-  function mondayOf(d){
-    const nd = startOfDay(d);
-    const day = nd.getDay(); // 0 Sun .. 6 Sat
-    const diff = (day === 0) ? -6 : 1 - day;
-    nd.setDate(nd.getDate() + diff);
-    return nd;
-  }
-  const weekFmt = new Intl.DateTimeFormat(undefined, { month:'short', day:'numeric' });
-
-  function renderWeek(){
-    const monday = mondayOf(today);
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate()+6);
-    document.getElementById('weekRange').textContent =
-      weekFmt.format(monday) + ' – ' + weekFmt.format(sunday);
-
-    let counts = { none:0, light:0, full:0 };
-    for(let i=0;i<7;i++){
-      const d = new Date(monday);
-      d.setDate(monday.getDate()+i);
-      const k = keyFor(d);
-      const v = data[k];
-      if(v && counts.hasOwnProperty(v)) counts[v]++;
-    }
-
-    document.getElementById('tallyNone').textContent = counts.none;
-    document.getElementById('tallyLight').textContent = counts.light;
-    document.getElementById('tallyFull').textContent = counts.full;
-
-    document.getElementById('barNone').style.width = Math.min(100, counts.none/Math.max(1,settings.zeroGoal)*100) + '%';
-    document.getElementById('barLight').style.width = Math.min(100, counts.light/Math.max(1,settings.lightGoalMax)*100) + '%';
-    document.getElementById('barFull').style.width = Math.min(100, counts.full/Math.max(1,settings.fullGoal)*100) + '%';
-
-    const loggedDays = counts.none + counts.light + counts.full;
-    let note = '';
-    if(loggedDays === 0){
-      note = 'No days logged yet this week.';
-    } else if(settings.fullGoalEnabled && counts.full > settings.fullGoal){
-      note = 'Full days over target (' + counts.full + '/' + settings.fullGoal + ') — a lighter day soon would help.';
-    } else if(loggedDays < 7){
-      note = (7-loggedDays) + ' day' + ((7-loggedDays)===1?'':'s') + ' left to log this week.';
-    } else {
-      note = 'Week fully logged.';
-    }
-    document.getElementById('weekNote').textContent = note;
-  }
-
   // ---------- Calendar ----------
   let viewYear = today.getFullYear();
   let viewMonth = today.getMonth(); // 0-indexed
@@ -849,24 +765,78 @@
   const monthFmt = new Intl.DateTimeFormat(undefined, { month:'long', year:'numeric' });
   const DOW = ['Mo','Tu','We','Th','Fr','Sa','Su'];
 
-  function renderMonthStats(daysInMonth){
-    // Percentages are of the days of this month that have actually
-    // happened so far — the full month (1st–last day) for a past month,
-    // or 1st–today for the current, in-progress month.
-    const isCurrentMonth = (viewYear === today.getFullYear() && viewMonth === today.getMonth());
-    const denomDays = isCurrentMonth ? today.getDate() : daysInMonth;
+  // ---------- Monthly breakdown chart ----------
+  // One stacked bar per calendar month that has at least one logged day,
+  // oldest to newest. Each bar's segments are sized as a % of that
+  // month's own logged days, so every bar always sums to 100%.
+  const monthChartFmt = new Intl.DateTimeFormat(undefined, { month:'short' });
+  const monthChartTitleFmt = new Intl.DateTimeFormat(undefined, { month:'long', year:'numeric' });
 
-    let mc = { none:0, light:0, full:0 };
-    for(let day=1; day<=daysInMonth; day++){
-      const d = new Date(viewYear, viewMonth, day);
-      if(d > today) continue; // future days haven't happened yet, can't be logged
-      const v = data[keyFor(d)];
-      if(v && mc.hasOwnProperty(v)) mc[v]++;
+  function renderMonthChart(){
+    const container = document.getElementById('monthChart');
+    const wasScrolledToEnd = container.scrollWidth === 0 ||
+      (container.scrollLeft + container.clientWidth >= container.scrollWidth - 4);
+
+    const monthKeys = new Set();
+    Object.keys(data).forEach(k=>{ monthKeys.add(k.slice(0,7)); }); // "YYYY-MM"
+    const sorted = Array.from(monthKeys).sort();
+
+    container.innerHTML = '';
+    if(sorted.length === 0){
+      container.innerHTML = '<div class="week-note" style="padding:8px 0;">Log a few days to see your monthly breakdown here.</div>';
+      return;
     }
-    function pct(n){ return Math.round(n/denomDays*100) + '%'; }
-    document.getElementById('pctNone').textContent = pct(mc.none);
-    document.getElementById('pctLight').textContent = pct(mc.light);
-    document.getElementById('pctFull').textContent = pct(mc.full);
+
+    sorted.forEach(mk=>{
+      const [y, m] = mk.split('-').map(Number);
+      const mDate = new Date(y, m-1, 1);
+      const isCurrent = (y === today.getFullYear() && (m-1) === today.getMonth());
+
+      let mc = { none:0, light:0, full:0 };
+      Object.keys(data).forEach(k=>{
+        if(k.slice(0,7) === mk){
+          const v = data[k];
+          if(mc.hasOwnProperty(v)) mc[v]++;
+        }
+      });
+      const total = mc.none + mc.light + mc.full;
+      const pctNone = total ? (mc.none/total*100) : 0;
+      const pctLight = total ? (mc.light/total*100) : 0;
+      const pctFull = total ? (mc.full/total*100) : 0;
+
+      const col = document.createElement('div');
+      col.className = 'month-col';
+
+      const bar = document.createElement('div');
+      bar.className = 'month-bar';
+      bar.title = monthChartTitleFmt.format(mDate) + ' — ' +
+        Math.round(pctNone) + '% Zero, ' + Math.round(pctLight) + '% Light, ' + Math.round(pctFull) + '% Full (' + total + ' day' + (total===1?'':'s') + ' logged)';
+      bar.innerHTML =
+        '<div class="seg none" style="height:' + pctNone + '%"></div>' +
+        '<div class="seg light" style="height:' + pctLight + '%"></div>' +
+        '<div class="seg full" style="height:' + pctFull + '%"></div>';
+      bar.addEventListener('click', ()=>{
+        viewYear = y;
+        viewMonth = m-1;
+        renderCalendar();
+        const calCard = document.getElementById('calendarCard');
+        if(calCard) calCard.scrollIntoView({ behavior:'smooth', block:'start' });
+      });
+
+      const label = document.createElement('div');
+      label.className = 'month-col-label' + (isCurrent ? ' current' : '');
+      label.textContent = monthChartFmt.format(mDate);
+
+      col.appendChild(bar);
+      col.appendChild(label);
+      container.appendChild(col);
+    });
+
+    // Keep the view pinned to the most recent month unless the user has
+    // scrolled away from the end to look at older months.
+    if(wasScrolledToEnd){
+      container.scrollLeft = container.scrollWidth;
+    }
   }
 
   function renderCalendar(){
@@ -893,7 +863,6 @@
     const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
     const totalCells = firstDow + daysInMonth;
     const totalRows = Math.ceil(totalCells/7);
-    renderMonthStats(daysInMonth);
 
     for(let row=0; row<totalRows; row++){
       for(let col=0; col<7; col++){
@@ -1171,8 +1140,8 @@
   function renderAll(){
     applyLabels();
     renderTodayCard();
-    renderWeek();
     renderCalendar();
+    renderMonthChart();
   }
   renderAll();
 
