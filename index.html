@@ -196,6 +196,50 @@
   .choice-btn.none.active{ background:var(--none-dim); border-color:var(--none); color:#cdf5e9; }
   .choice-btn.light.active{ background:var(--light-dim); border-color:var(--light); color:#ffe9bd; }
   .choice-btn.full.active{ background:var(--full-dim); border-color:var(--full); color:#cfdcff; }
+  .num-row{ display:grid; grid-template-columns:repeat(11,1fr); gap:4px; margin-top:8px; }
+  .num-btn{
+    padding:6px 0; border-radius:8px; border:1px solid var(--card-border);
+    background:rgba(255,255,255,0.04); color:var(--text-dim);
+    font-size:0.8rem; font-family:inherit; cursor:pointer;
+  }
+  .num-btn.none{ border-color:var(--none-dim); background:rgba(63,143,122,0.12); color:#cdf5e9; }
+  .num-btn.none.active{ border-color:var(--none); background:rgba(63,143,122,0.38); }
+  .num-btn.light{ border-color:var(--light-dim); background:rgba(201,154,60,0.10); color:#ffe9bd; }
+  .num-btn.full{ border-color:var(--full-dim); background:rgba(53,96,217,0.14); color:#cfdcff; }
+  .num-btn.light.active{ border-color:var(--light); background:rgba(201,154,60,0.35); }
+  .num-btn.full.active{ border-color:var(--full); background:rgba(53,96,217,0.4); }
+  .num-btn.active{ color:var(--text); border-color:var(--burgundy-bright); background:rgba(255,255,255,0.12); }
+  .count-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-top:8px;
+    font-size:0.76rem;
+    color:var(--text-dim);
+  }
+  .count-row.hidden{ visibility:hidden; }
+  .count-row span{ opacity:0.7; }
+  .count-row input{
+    width:60px;
+    padding:5px 8px;
+    border-radius:8px;
+    border:1px solid var(--card-border);
+    background:rgba(255,255,255,0.04);
+    color:var(--text);
+    font-size:0.85rem;
+    text-align:center;
+  }
+  .count-row input:focus{ outline:none; border-color:var(--burgundy-bright); }
+  .modal .count-row{ margin:0 0 10px; }
+  .cal-day .cal-count{
+    position:absolute;
+    top:2px;
+    right:4px;
+    font-size:0.5rem;
+    line-height:1;
+    opacity:0.85;
+  }
   .clear-link{
     display:block;
     text-align:center;
@@ -523,7 +567,7 @@
 <body>
   <div class="app">
     <header>
-      <span class="version-tag" id="versionTag">v1.9</span>
+      <span class="version-tag" id="versionTag">v1.13</span>
       <button class="settings-btn" id="settingsBtn" aria-label="Settings">⚙</button>
       <h1>DRINK</h1>
       <p>drinking is cool but maybe not all the time</p>
@@ -542,6 +586,7 @@
         <button class="choice-btn light" data-choice="light">Light<small id="lblLight">1–2</small></button>
         <button class="choice-btn full" data-choice="full">Full<small id="lblFull">3+</small></button>
       </div>
+      <div class="num-row" id="numRow"><button type="button" class="num-btn none" data-num="0">0</button><button type="button" class="num-btn" data-num="1">1</button><button type="button" class="num-btn" data-num="2">2</button><button type="button" class="num-btn" data-num="3">3</button><button type="button" class="num-btn" data-num="4">4</button><button type="button" class="num-btn" data-num="5">5</button><button type="button" class="num-btn" data-num="6">6</button><button type="button" class="num-btn" data-num="7">7</button><button type="button" class="num-btn" data-num="8">8</button><button type="button" class="num-btn" data-num="9">9</button><button type="button" class="num-btn" data-num="10">10</button></div>
       <div class="clear-link" id="clearSelected">clear this entry</div>
     </section>
 
@@ -574,6 +619,10 @@
         <button class="choice-btn none" data-mchoice="none">Zero<small id="mLblZero">0 drinks</small></button>
         <button class="choice-btn light" data-mchoice="light">Light<small id="mLblLight">1–2</small></button>
         <button class="choice-btn full" data-mchoice="full">Full<small id="mLblFull">3+</small></button>
+      </div>
+      <div class="count-row" id="modalCountRow">
+        <label for="modalCount">Number of drinks <span>(optional, sets category)</span></label>
+        <input type="number" id="modalCount" min="1" max="99" step="1" inputmode="numeric">
       </div>
       <div class="modal-actions">
         <button id="modalClear">Clear entry</button>
@@ -667,6 +716,22 @@
   }
   let data = loadData();
 
+  // Optional drink counts per day (only meaningful for Light/Full days).
+  const COUNTS_KEY = 'drink-tracker-counts-v1';
+  function loadCounts(){
+    try{ return JSON.parse(localStorage.getItem(COUNTS_KEY) || '{}'); }
+    catch(e){ return {}; }
+  }
+  function saveCounts(){ localStorage.setItem(COUNTS_KEY, JSON.stringify(counts)); }
+  let counts = loadCounts();
+  function setCount(key, raw){
+    const n = Math.round(Number(raw));
+    if(raw === '' || isNaN(n) || n < 1){ delete counts[key]; }
+    else { counts[key] = Math.min(99, n); }
+    saveCounts();
+  }
+  function countAllowed(key){ return data[key] === 'light' || data[key] === 'full'; }
+
   // ---------- Settings (goals & drink-count ranges) ----------
   const SETTINGS_KEY = 'drink-tracker-settings-v1';
   const DEFAULT_SETTINGS = {
@@ -733,11 +798,33 @@
     document.querySelectorAll('.choice-row .choice-btn[data-choice]').forEach(btn=>{
       btn.classList.toggle('active', data[selectedKey()] === btn.dataset.choice);
     });
+
+    const cur = countAllowed(selectedKey()) ? counts[selectedKey()] : null;
+    document.querySelectorAll('#numRow .num-btn').forEach(b=>{
+      const n = Number(b.dataset.num);
+      if(n === 0){ b.classList.toggle('active', data[selectedKey()] === 'none'); return; }
+      b.classList.toggle('light', n < settings.fullMin);
+      b.classList.toggle('full', n >= settings.fullMin);
+      b.classList.toggle('active', n === cur);
+    });
   }
+  // Category is decided at tap time from current settings; later settings changes never re-categorise.
+  function categoryFor(n){ return n >= settings.fullMin ? 'full' : 'light'; }
+  document.querySelectorAll('#numRow .num-btn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const k = selectedKey();
+      const n = Number(b.dataset.num);
+      if(n === 0){ data[k] = 'none'; delete counts[k]; }
+      else if(countAllowed(k) && counts[k] === n){ delete counts[k]; }
+      else { data[k] = categoryFor(n); counts[k] = n; }
+      saveCounts(); saveData(data); renderAll();
+    });
+  });
   document.querySelectorAll('.choice-row .choice-btn[data-choice]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const k = selectedKey();
       data[k] = btn.dataset.choice;
+      if(data[k] === 'none'){ delete counts[k]; saveCounts(); }
       saveData(data);
       renderAll();
       const isToday = k === todayKey;
@@ -746,6 +833,8 @@
   });
   document.getElementById('clearSelected').addEventListener('click', ()=>{
     delete data[selectedKey()];
+    delete counts[selectedKey()];
+    saveCounts();
     saveData(data);
     renderAll();
     showToast('Cleared entry');
@@ -895,6 +984,12 @@
         } else {
           const v = data[k];
           if(v) el.classList.add(v);
+          if((v === 'light' || v === 'full') && counts[k]){
+            const badge = document.createElement('span');
+            badge.className = 'cal-count';
+            badge.textContent = counts[k];
+            el.appendChild(badge);
+          }
           el.addEventListener('click', ()=> openModal(k, d));
         }
         if(k === todayKey){
@@ -967,8 +1062,27 @@
     modalOverlay.querySelectorAll('[data-mchoice]').forEach(btn=>{
       btn.classList.toggle('active', data[key] === btn.dataset.mchoice);
     });
+    updateModalCount();
     modalOverlay.classList.add('open');
   }
+  function updateModalCount(){
+    const allowed = modalKey && countAllowed(modalKey);
+    document.getElementById('modalCountRow').classList.remove('hidden');
+    document.getElementById('modalCount').value = (allowed && counts[modalKey]) ? counts[modalKey] : '';
+  }
+  document.getElementById('modalCount').addEventListener('change', (e)=>{
+    if(!modalKey) return;
+    const n = Math.round(Number(e.target.value));
+    if(n >= 1 && !countAllowed(modalKey)) data[modalKey] = categoryFor(n);
+    else if(n >= 1) data[modalKey] = categoryFor(n);
+    else if(!countAllowed(modalKey)) return;
+    setCount(modalKey, e.target.value);
+    saveData(data);
+    renderAll();
+    updateModalCount();
+    modalOverlay.querySelectorAll('[data-mchoice]').forEach(b=>b.classList.toggle('active', data[modalKey]===b.dataset.mchoice));
+    showToast('Saved');
+  });
   function closeModal(){
     modalOverlay.classList.remove('open');
     modalKey = null;
@@ -977,15 +1091,26 @@
     btn.addEventListener('click', ()=>{
       if(!modalKey) return;
       data[modalKey] = btn.dataset.mchoice;
+      if(data[modalKey] === 'none'){ delete counts[modalKey]; saveCounts(); }
       saveData(data);
       renderAll();
-      closeModal();
-      showToast('Saved');
+      modalOverlay.querySelectorAll('[data-mchoice]').forEach(b=>{
+        b.classList.toggle('active', data[modalKey] === b.dataset.mchoice);
+      });
+      updateModalCount();
+      if(data[modalKey] === 'none'){
+        closeModal();
+        showToast('Saved');
+      } else {
+        showToast('Saved — add drinks below, or Close');
+      }
     });
   });
   document.getElementById('modalClear').addEventListener('click', ()=>{
     if(modalKey){
       delete data[modalKey];
+      delete counts[modalKey];
+      saveCounts();
       saveData(data);
       renderAll();
     }
@@ -1108,7 +1233,9 @@
   });
 
   document.getElementById('exportBtn').addEventListener('click', ()=>{
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+    const out = Object.assign({}, data);
+    if(Object.keys(counts).length) out.__counts = counts;
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type:'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -1129,13 +1256,18 @@
       try{
         const imported = JSON.parse(reader.result);
         if(typeof imported !== 'object' || imported === null) throw new Error('bad format');
+        const importedCounts = (imported.__counts && typeof imported.__counts === 'object') ? imported.__counts : {};
+        delete imported.__counts;
         const merge = confirm('Merge with existing data? OK = merge, Cancel = replace all data.');
         if(merge){
           data = Object.assign({}, data, imported);
+          counts = Object.assign({}, counts, importedCounts);
         } else {
           data = imported;
+          counts = importedCounts;
         }
         saveData(data);
+        saveCounts();
         renderAll();
         showToast('Import complete');
       }catch(err){
